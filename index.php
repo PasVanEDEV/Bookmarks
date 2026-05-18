@@ -3,9 +3,36 @@ require_once __DIR__ . '/auth.php';
 
 startSecureSession();
 
-// ==== ENTER YOUR OWN PASSWORD HERE ====
-$password = 'ENTER YOUR OWN PASSWORD HERE';
-// =======================================
+// ==== PASSWORD CONFIGURATION ====
+function loadEnvFile($file) {
+    if (!is_readable($file)) return;
+
+    foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === "" || $line[0] === "#" || strpos($line, "=") === false) continue;
+
+        list($name, $value) = explode("=", $line, 2);
+        $name = trim($name);
+        $value = trim($value);
+
+        if ($name === "") continue;
+        $first = substr($value, 0, 1);
+        $last = substr($value, -1);
+        if (($first === chr(34) && $last === chr(34)) || ($first === chr(39) && $last === chr(39))) {
+            $value = substr($value, 1, -1);
+        }
+
+        putenv($name . "=" . $value);
+        $_ENV[$name] = $value;
+    }
+}
+
+loadEnvFile(__DIR__ . "/.env");
+$password = getenv("APP_PASSWORD");
+if ($password === false || $password === "") {
+    $password = null;
+}
+// ================================
 
 if (isset($_GET['logout'])) {
     clearRememberCookie();
@@ -17,7 +44,7 @@ if (isset($_GET['logout'])) {
 restoreLoginFromRememberCookie();
 
 if (isset($_POST['login'])) {
-    if (hash_equals($password, $_POST['password'])) {
+    if ($password !== null && hash_equals($password, $_POST["password"])) {
         session_regenerate_id(true);
         $_SESSION['loggedIn'] = true;
         createRememberLogin();

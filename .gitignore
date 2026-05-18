@@ -2,3 +2,4 @@ auth_tokens.php
 data.php
 icon.png
 backups/
+.env

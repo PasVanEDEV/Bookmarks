@@ -68,7 +68,7 @@ Bookmarks stores its data locally in PHP-protected files. No database is require
 
 | File | Purpose |
 | --- | --- |
-| `index.php` | Login screen, dashboard markup, password setting, logout link |
+| `index.php` | Login screen, dashboard markup, `.env` password loading, logout link |
 | `auth.php` | Shared session, cookie, and 90-day remember-me token handling |
 | `load.php` | Loads bookmark data from `data.php` after auth validation |
 | `save.php` | Validates and saves bookmark data, creates backups, rotates old backups |
@@ -111,13 +111,13 @@ Example target folder:
 
 ## 2. Set your password
 
-Open `index.php` and update the password value near the top of the file:
+Create a `.env` file in the same folder as `index.php` and store the password there:
 
-```php
-$password = "YOUR_OWN_PASSWORD";
+```text
+APP_PASSWORD=YOUR_STRONG_PASSWORD
 ```
 
-Use a strong private password before publishing the app online.
+The `.env` file is ignored by Git, so the real password stays outside the repository.
 
 ## 3. Create writable data files
 
@@ -178,7 +178,7 @@ Visit the app URL in your browser, for example:
 https://example.com/bookmarks/
 ```
 
-Log in with the password from `index.php`.
+Log in with the password from `.env`.
 
 ---
 
@@ -186,7 +186,7 @@ Log in with the password from `index.php`.
 
 ## Authentication
 
-* Login uses the password configured in `index.php`.
+* Login uses `APP_PASSWORD` from `.env`.
 * PHP sessions protect the dashboard and JSON endpoints.
 * Remember-me tokens are random values generated with `random_bytes()`.
 * Only hashed token values are stored in `auth_tokens.php`.
