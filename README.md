@@ -286,10 +286,6 @@ Make sure `auth.php`, `load.php`, `save.php`, and `index.php` are all uploaded t
 
 Check that PHP can write to `data.php` and `backups/`. Also confirm that the submitted data contains `bookmarks` and `categoryOrder` arrays, the CSRF token meta tag is present on the dashboard, and `save.php` is reachable.
 
-## Backups are not created
-
-Make sure the PHP process can create or write to the `backups/` directory.
-
 ## The favicon is missing
 
 Add an `icon.png` file to the app folder, or remove the icon links from `index.php`.
