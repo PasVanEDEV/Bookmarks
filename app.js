@@ -14,6 +14,7 @@ if (btnTheme) {
 }
 
 const state = { bookmarks: [], categoryOrder: [], query: "", selectedCategories: [], editingId: null };
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
 
 const categoryColors = {
   "Muziek": { a: "#1DB954", s: "rgba(29, 185, 84, 0.14)" },
@@ -123,7 +124,10 @@ function saveData(){
   
   fetch('save.php', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken
+    },
     body: JSON.stringify(payload)
   })
   .then(r => { 
@@ -323,9 +327,12 @@ function renderGrid(items){
           <div class="bookmarkSub">${safeHost}</div>
         </div>
         <div class="rowActions">
-          <button class="rowBtn" onclick="openEdit('${escapeHTML(b.id)}')" title="Edit">✎</button>
-          <button class="rowBtn rowBtnDanger" onclick="confirmDelete('${escapeHTML(b.id)}', '${safeTitle.replace(/'/g, "\\'")}')" title="Delete">🗑</button>
+          <button class="rowBtn" type="button" data-action="edit" title="Edit">✎</button>
+          <button class="rowBtn rowBtnDanger" type="button" data-action="delete" title="Delete">🗑</button>
         </div>`;
+
+      li.querySelector('[data-action="edit"]').addEventListener('click', () => openEdit(b.id));
+      li.querySelector('[data-action="delete"]').addEventListener('click', () => confirmDelete(b.id, b.title));
         
       li.ondragstart = (e) => {
         e.stopPropagation(); 

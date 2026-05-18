@@ -78,6 +78,7 @@ Bookmarks stores its data locally in PHP-protected files. No database is require
 | `auth_tokens.php` | Local storage for hashed remember-me tokens |
 | `backups/` | Auto-created folder for the latest 10 backups |
 | `icon.png` | Optional favicon/apple-touch icon referenced by `index.php` |
+| `.htaccess` | Apache rules blocking direct access to `.env`, `data.php`, and `auth_tokens.php` |
 
 ---
 
@@ -95,6 +96,7 @@ save.php
 app.js
 style.css
 README.md
+.htaccess
 ```
 
 Optional but recommended:
@@ -117,7 +119,9 @@ Create a `.env` file in the same folder as `index.php` and store the password th
 APP_PASSWORD=YOUR_STRONG_PASSWORD
 ```
 
-The `.env` file is ignored by Git, so the real password stays outside the repository.
+The `.env` file is ignored by Git, so the real password stays outside the repository. Values may be unquoted or wrapped in single or double quotes.
+
+For non-Apache hosting, make sure the web server blocks direct access to `.env`, `data.php`, `auth_tokens.php`, and `backups/`. The included `.htaccess` covers this for Apache-compatible hosting.
 
 ## 3. Create writable data files
 
@@ -193,6 +197,7 @@ Log in with the password from `.env`.
 * Expired tokens are removed during token checks.
 * Session IDs are regenerated after login and remember-me recovery.
 * Logout clears the remember-me cookie and destroys the PHP session.
+* Save requests require a session CSRF token from the dashboard page.
 
 ## Cookies
 
@@ -210,6 +215,7 @@ HTTPS detection also supports `HTTP_X_FORWARDED_PROTO=https` for reverse proxy s
 * Remember-me token hashes are stored locally in `auth_tokens.php`.
 * Backups are stored locally in `backups/`.
 * `data.php`, `auth_tokens.php`, and backup files start with `<?php exit; ?>` to prevent direct PHP execution from exposing raw data.
+* `.htaccess` blocks direct web access to `.env`, `data.php`, and `auth_tokens.php` on Apache-compatible hosting.
 
 ## Backup Protection
 
@@ -226,6 +232,13 @@ This helps prevent direct web access to backup files on Apache-compatible hostin
 ## External Requests
 
 Bookmark favicons are loaded in the browser through Google favicon URLs. Bookmark data itself is still stored locally on your own server.
+
+## Recommended Hardening
+
+* Serve the app over HTTPS so session and remember-me cookies can use the `Secure` flag.
+* On non-Apache hosting, add equivalent deny rules for `.env`, `data.php`, `auth_tokens.php`, and `backups/`.
+* Use a strong unique `APP_PASSWORD` and rotate it if it was ever committed or shared.
+* Consider server-level rate limiting or basic access restrictions if the app is publicly reachable.
 
 ---
 
@@ -290,7 +303,7 @@ Make sure `auth.php`, `load.php`, `save.php`, and `index.php` are all uploaded t
 
 ## Data is not saved
 
-Check that PHP can write to `data.php` and `backups/`. Also confirm that the submitted data is valid JSON and that `save.php` is reachable.
+Check that PHP can write to `data.php` and `backups/`. Also confirm that the submitted data contains `bookmarks` and `categoryOrder` arrays, the CSRF token meta tag is present on the dashboard, and `save.php` is reachable.
 
 ## Backups are not created
 

@@ -3,6 +3,10 @@ require_once __DIR__ . '/auth.php';
 
 startSecureSession();
 
+if (empty($_SESSION["csrfToken"])) {
+    $_SESSION["csrfToken"] = bin2hex(random_bytes(32));
+}
+
 // ==== PASSWORD CONFIGURATION ====
 function loadEnvFile($file) {
     if (!is_readable($file)) return;
@@ -94,6 +98,7 @@ if (!isLoggedIn()) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
+  <meta name="csrf-token" content="<?= htmlspecialchars($_SESSION["csrfToken"], ENT_QUOTES, "UTF-8") ?>" />
   <title>My Bookmarks</title>
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">

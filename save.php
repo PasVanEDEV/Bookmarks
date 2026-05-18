@@ -9,13 +9,25 @@ if (!isLoggedIn()) {
 }
 
 error_reporting(0);
-header('Content-Type: application/json');
+header("Content-Type: application/json");
 
-$data = file_get_contents('php://input');
-json_decode($data); // Decode to catch errors
+$csrfToken = $_SERVER["HTTP_X_CSRF_TOKEN"] ?? "";
+if (empty($_SESSION["csrfToken"]) || !hash_equals($_SESSION["csrfToken"], $csrfToken)) {
+    http_response_code(403);
+    die(json_encode(["status" => "error", "message" => "Invalid CSRF token."]));
+}
 
-// Ensure the payload is valid JSON
-if (json_last_error() === JSON_ERROR_NONE) {
+$data = file_get_contents("php://input");
+$decoded = json_decode($data, true); // Decode to catch errors
+
+// Ensure the payload is valid JSON and has the expected shape
+if (
+    json_last_error() === JSON_ERROR_NONE &&
+    is_array($decoded) &&
+    isset($decoded["bookmarks"], $decoded["categoryOrder"]) &&
+    is_array($decoded["bookmarks"]) &&
+    is_array($decoded["categoryOrder"])
+) {
     $mainFile = 'data.php';
     $backupDir = 'backups';
     
@@ -42,7 +54,7 @@ if (json_last_error() === JSON_ERROR_NONE) {
     }
 
     $contentToSave = "<?php exit; ?>\n" . $data;
-    $result = file_put_contents($mainFile, $contentToSave);
+    $result = file_put_contents($mainFile, $contentToSave, LOCK_EX);
     
     if ($result !== false) {
         echo json_encode(["status" => "success"]);
@@ -52,6 +64,6 @@ if (json_last_error() === JSON_ERROR_NONE) {
     }
 } else {
     http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Invalid JSON data."]);
+    echo json_encode(["status" => "error", "message" => "Invalid bookmark data."]);
 }
 ?>
