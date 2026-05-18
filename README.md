@@ -208,8 +208,6 @@ HTTPS detection also supports `HTTP_X_FORWARDED_PROTO=https` for reverse proxy s
 * `data.php` and `auth_tokens.php` start with `<?php exit; ?>` to prevent direct PHP execution from exposing raw data.
 * `.htaccess` blocks direct web access to `.env`, `data.php`, and `auth_tokens.php` on Apache-compatible hosting.
 
-This helps prevent direct web access to backup files on Apache-compatible hosting.
-
 ## External Requests
 
 Bookmark favicons are loaded in the browser through Google favicon URLs. Bookmark data itself is still stored locally on your own server.
@@ -217,7 +215,7 @@ Bookmark favicons are loaded in the browser through Google favicon URLs. Bookmar
 ## Recommended Hardening
 
 * Serve the app over HTTPS so session and remember-me cookies can use the `Secure` flag.
-* On non-Apache hosting, add equivalent deny rules for `.env`, `data.php`, `auth_tokens.php`, and `backups/`.
+* On non-Apache hosting, add equivalent deny rules for `.env`, `data.php`, and `auth_tokens.php`.
 * Use a strong unique `APP_PASSWORD` and rotate it if it was ever committed or shared.
 * Consider server-level rate limiting or basic access restrictions if the app is publicly reachable.
 
@@ -284,7 +282,7 @@ Make sure `auth.php`, `load.php`, `save.php`, and `index.php` are all uploaded t
 
 ## Data is not saved
 
-Check that PHP can write to `data.php` and `backups/`. Also confirm that the submitted data contains `bookmarks` and `categoryOrder` arrays, the CSRF token meta tag is present on the dashboard, and `save.php` is reachable.
+Check that PHP can write to `data.php`. Also confirm that the submitted data contains `bookmarks` and `categoryOrder` arrays, the CSRF token meta tag is present on the dashboard, and `save.php` is reachable.
 
 ## The favicon is missing
 
