@@ -41,9 +41,6 @@ Bookmarks stores its data locally in PHP-protected files. No database is require
 * **Dark mode**
   Toggle light and dark mode. The selected theme is saved in the browser with `localStorage` and is also applied on the login screen.
 
-* **Automatic backups**
-  Every save creates a timestamped backup in `backups/`. The app keeps the latest 10 backups and creates a protective `.htaccess` file for that folder.
-
 * **Input and output protection**
   URLs are validated, JSON payloads are checked before saving, and dynamic output is escaped to reduce XSS risk.
 
@@ -59,7 +56,7 @@ Bookmarks stores its data locally in PHP-protected files. No database is require
 
 * PHP 7.3 or newer.
 * A web server that can run PHP, such as Apache, Nginx with PHP-FPM, or a hosting control panel with PHP support.
-* Write access for PHP to the app folder or at least to `data.php`, `auth_tokens.php`, and `backups/`.
+* Write access for PHP to the app folder or at least to `data.php` and `auth_tokens.php`.
 * A modern browser with JavaScript enabled.
 
 ---
@@ -76,7 +73,6 @@ Bookmarks stores its data locally in PHP-protected files. No database is require
 | `style.css` | Responsive light/dark styling |
 | `data.php` | Local bookmark data file, generated or maintained by the app |
 | `auth_tokens.php` | Local storage for hashed remember-me tokens |
-| `backups/` | Auto-created folder for the latest 10 backups |
 | `icon.png` | Optional favicon/apple-touch icon referenced by `index.php` |
 | `.htaccess` | Apache rules blocking direct access to `.env`, `data.php`, and `auth_tokens.php` |
 
@@ -119,7 +115,7 @@ APP_PASSWORD=YOUR_STRONG_PASSWORD
 
 The `.env` file is ignored by Git, so the real password stays outside the repository. Values may be unquoted or wrapped in single or double quotes.
 
-For non-Apache hosting, make sure the web server blocks direct access to `.env`, `data.php`, `auth_tokens.php`, and `backups/`. The included `.htaccess` covers this for Apache-compatible hosting.
+For non-Apache hosting, make sure the web server blocks direct access to `.env`, `data.php`, and `auth_tokens.php`. The included `.htaccess` covers this for Apache-compatible hosting.
 
 ## 3. Create writable data files
 
@@ -152,7 +148,6 @@ Recommended folder permissions:
 
 ```bash
 chmod 755 /path/to/bookmarks
-chmod 755 /path/to/bookmarks/backups
 ```
 
 Recommended file permissions:
@@ -167,10 +162,9 @@ If your hosting setup uses a different PHP user, make sure the PHP process can w
 ```text
 auth_tokens.php
 data.php
-backups/
 ```
 
-If `backups/` does not exist, `save.php` will try to create it on the first successful save.
+If `data.php` or `auth_tokens.php` do not exist, the app can create them when it has write access to the application folder.
 
 ## 5. Open the app
 
