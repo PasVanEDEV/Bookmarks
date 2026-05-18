@@ -4,7 +4,7 @@ require_once __DIR__ . '/auth.php';
 startSecureSession();
 
 // ==== ENTER YOUR OWN PASSWORD HERE ====
-$password = 'NTER YOUR OWN PASSWORD HERE';
+$password = 'ENTER YOUR OWN PASSWORD HERE';
 // =======================================
 
 if (isset($_GET['logout'])) {
