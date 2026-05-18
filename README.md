@@ -95,8 +95,6 @@ load.php
 save.php
 app.js
 style.css
-README.md
-.htaccess
 ```
 
 Optional but recommended:
