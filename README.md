@@ -68,7 +68,7 @@ Bookmarks stores its data locally in PHP-protected files. No database is require
 | `index.php` | Login screen, dashboard markup, `.env` password loading, logout link |
 | `auth.php` | Shared session, cookie, and 90-day remember-me token handling |
 | `load.php` | Loads bookmark data from `data.php` after auth validation |
-| `save.php` | Validates and saves bookmark data, creates backups, rotates old backups |
+| `save.php` | Validates and saves bookmark data to `data.php` |
 | `app.js` | Frontend logic for bookmarks, categories, search, filters, drag-and-drop, theme, and toasts |
 | `style.css` | Responsive light/dark styling |
 | `data.php` | Local bookmark data file, generated or maintained by the app |
@@ -205,19 +205,8 @@ HTTPS detection also supports `HTTP_X_FORWARDED_PROTO=https` for reverse proxy s
 
 * Bookmarks are stored locally in `data.php`.
 * Remember-me token hashes are stored locally in `auth_tokens.php`.
-* Backups are stored locally in `backups/`.
-* `data.php`, `auth_tokens.php`, and backup files start with `<?php exit; ?>` to prevent direct PHP execution from exposing raw data.
+* `data.php` and `auth_tokens.php` start with `<?php exit; ?>` to prevent direct PHP execution from exposing raw data.
 * `.htaccess` blocks direct web access to `.env`, `data.php`, and `auth_tokens.php` on Apache-compatible hosting.
-
-## Backup Protection
-
-When `backups/` is created automatically, the app also writes:
-
-```apache
-Require all denied
-```
-
-to `backups/.htaccess`.
 
 This helps prevent direct web access to backup files on Apache-compatible hosting.
 
