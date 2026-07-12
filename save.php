@@ -110,6 +110,29 @@ $out = [
 ];
 
 $mainFile = dataFile();
+
+// Keep a rolling backup of the previous data before overwriting it, so an
+// accidental clear or bad save can be recovered. Backups live in the data
+// dir (the persistent volume) and keep the guard line, so they are never
+// web-executable; the .htaccess also denies the folder on Apache hosting.
+if (file_exists($mainFile)) {
+    $backupDir = dataDir() . '/backups';
+    if (!is_dir($backupDir)) {
+        @mkdir($backupDir, 0755, true);
+        @file_put_contents($backupDir . '/.htaccess', "Require all denied\n");
+    }
+    if (is_dir($backupDir)) {
+        @copy($mainFile, $backupDir . '/backup_' . date('Y-m-d_H-i-s') . '.php');
+        $backups = glob($backupDir . '/backup_*.php');
+        if ($backups && count($backups) > 10) {
+            usort($backups, function ($a, $b) { return filemtime($a) - filemtime($b); });
+            foreach (array_slice($backups, 0, count($backups) - 10) as $old) {
+                @unlink($old);
+            }
+        }
+    }
+}
+
 $contentToSave = "<?php exit; ?>\n" . json_encode($out, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 $result = file_put_contents($mainFile, $contentToSave, LOCK_EX);
 

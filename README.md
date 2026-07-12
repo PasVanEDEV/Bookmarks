@@ -220,6 +220,7 @@ HTTPS detection also supports `HTTP_X_FORWARDED_PROTO=https` for reverse proxy s
 ## Data Storage
 
 * Bookmarks are stored locally in `data.php`.
+* Before each save, the previous `data.php` is copied to `backups/` (last 10 kept) so an accidental clear or bad save can be recovered. On Railway/Docker these live on the mounted `DATA_DIR` volume.
 * Remember-me token hashes are stored locally in `auth_tokens.php`.
 * `data.php` and `auth_tokens.php` start with `<?php exit; ?>` to prevent direct PHP execution from exposing raw data.
 * `.htaccess` blocks direct web access to `.env`, `data.php`, and `auth_tokens.php` on Apache-compatible hosting.

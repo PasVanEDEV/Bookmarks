@@ -13,6 +13,9 @@
     </IfModule>
 </FilesMatch>
 
+# Block the backups folder (only relevant when DATA_DIR is the app folder).
+RedirectMatch 403 ^/backups(/.*)?$
+
 # Belt-and-suspenders: block any leftover dotfiles.
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>
