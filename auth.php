@@ -41,15 +41,37 @@ function startSecureSession() {
     session_start();
 }
 
-function readTokens($file = AUTH_TOKEN_FILE) {
-    if (!file_exists($file)) return [];
-    $content = file_get_contents($file);
-    $json = preg_replace('/^<\?php exit; \?>\s*/i', '', $content);
-    return json_decode($json, true) ?: [];
-}
+// Atomically read, mutate, and write the token file under one exclusive
+// lock so concurrent requests can't clobber each other's changes.
+// $mutator receives the current tokens array and returns the array to
+// persist (return null to leave the file untouched).
+function withTokenLock(callable $mutator, $file = AUTH_TOKEN_FILE) {
+    $fp = @fopen($file, 'c+');
+    if ($fp === false) {
+        return;
+    }
 
-function writeTokens($tokens, $file = AUTH_TOKEN_FILE) {
-    file_put_contents($file, "<?php exit; ?>\n" . json_encode($tokens), LOCK_EX);
+    try {
+        if (!flock($fp, LOCK_EX)) {
+            return;
+        }
+
+        $content = stream_get_contents($fp);
+        $json = preg_replace('/^<\?php exit; \?>\s*/i', '', $content);
+        $tokens = json_decode($json, true) ?: [];
+
+        $newTokens = $mutator($tokens);
+
+        if (is_array($newTokens)) {
+            ftruncate($fp, 0);
+            rewind($fp);
+            fwrite($fp, "<?php exit; ?>\n" . json_encode($newTokens));
+            fflush($fp);
+        }
+    } finally {
+        flock($fp, LOCK_UN);
+        fclose($fp);
+    }
 }
 
 function clearRememberCookie() {
@@ -63,9 +85,10 @@ function createRememberLogin() {
 
     setcookie(REMEMBER_COOKIE_NAME, $token, rememberCookieOptions($expires));
 
-    $tokens = readTokens();
-    $tokens[] = ['hash' => $hash, 'expires' => $expires];
-    writeTokens($tokens);
+    withTokenLock(function ($tokens) use ($hash, $expires) {
+        $tokens[] = ['hash' => $hash, 'expires' => $expires];
+        return $tokens;
+    });
 }
 
 function restoreLoginFromRememberCookie() {
@@ -77,27 +100,27 @@ function restoreLoginFromRememberCookie() {
         return false;
     }
 
-    $tokens = readTokens();
     $hash = hash('sha256', $_COOKIE[REMEMBER_COOKIE_NAME]);
     $now = time();
     $newExpires = $now + REMEMBER_LIFETIME;
     $valid = false;
-    $newTokens = [];
 
-    foreach ($tokens as $token) {
-        if (!isset($token['hash'], $token['expires']) || $token['expires'] <= $now) {
-            continue;
+    withTokenLock(function ($tokens) use ($hash, $now, $newExpires, &$valid) {
+        $newTokens = [];
+        foreach ($tokens as $token) {
+            if (!isset($token['hash'], $token['expires']) || $token['expires'] <= $now) {
+                continue;
+            }
+
+            if (hash_equals($token['hash'], $hash)) {
+                $valid = true;
+                $token['expires'] = $newExpires;
+            }
+
+            $newTokens[] = $token;
         }
-
-        if (hash_equals($token['hash'], $hash)) {
-            $valid = true;
-            $token['expires'] = $newExpires;
-        }
-
-        $newTokens[] = $token;
-    }
-
-    writeTokens($newTokens);
+        return $newTokens;
+    });
 
     if (!$valid) {
         clearRememberCookie();
