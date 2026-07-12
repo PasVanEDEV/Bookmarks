@@ -107,13 +107,27 @@ Example target folder:
 
 ## 2. Set your password
 
-Create a `.env` file in the same folder as `index.php` and store the password there:
+Create a `.env` file in the same folder as `index.php`.
+
+Recommended — store a bcrypt hash instead of the plaintext password:
+
+```text
+APP_PASSWORD_HASH=$2y$10$....your-generated-hash....
+```
+
+Generate the hash on any machine with PHP:
+
+```bash
+php -r 'echo password_hash("YOUR_STRONG_PASSWORD", PASSWORD_DEFAULT), "\n";'
+```
+
+Backward-compatible — a plaintext password still works if no hash is set:
 
 ```text
 APP_PASSWORD=YOUR_STRONG_PASSWORD
 ```
 
-The `.env` file is ignored by Git, so the real password stays outside the repository. Values may be unquoted or wrapped in single or double quotes.
+When both are present, `APP_PASSWORD_HASH` wins. The `.env` file is ignored by Git, so the secret stays outside the repository. Values may be unquoted or wrapped in single or double quotes.
 
 For non-Apache hosting, make sure the web server blocks direct access to `.env`, `data.php`, and `auth_tokens.php`. The included `.htaccess` covers this for Apache-compatible hosting.
 
@@ -182,7 +196,7 @@ Log in with the password from `.env`.
 
 ## Authentication
 
-* Login uses `APP_PASSWORD` from `.env`.
+* Login verifies against `APP_PASSWORD_HASH` (bcrypt, via `password_verify`) when set, or a plaintext `APP_PASSWORD` as fallback.
 * PHP sessions protect the dashboard and JSON endpoints.
 * Remember-me tokens are random values generated with `random_bytes()`.
 * Only hashed token values are stored in `auth_tokens.php`.

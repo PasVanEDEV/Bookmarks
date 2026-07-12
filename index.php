@@ -32,9 +32,30 @@ function loadEnvFile($file) {
 }
 
 loadEnvFile(__DIR__ . "/.env");
-$password = getenv("APP_PASSWORD");
-if ($password === false || $password === "") {
-    $password = null;
+
+// Prefer a bcrypt/argon hash (APP_PASSWORD_HASH); fall back to a
+// plaintext APP_PASSWORD for backward compatibility.
+$passwordHash = getenv("APP_PASSWORD_HASH");
+if ($passwordHash === false || $passwordHash === "") {
+    $passwordHash = null;
+}
+$passwordPlain = getenv("APP_PASSWORD");
+if ($passwordPlain === false || $passwordPlain === "") {
+    $passwordPlain = null;
+}
+$hasCredential = $passwordHash !== null || $passwordPlain !== null;
+
+function verifyAppPassword($input, $hash, $plain) {
+    if (!is_string($input) || $input === "") {
+        return false;
+    }
+    if ($hash !== null) {
+        return password_verify($input, $hash);
+    }
+    if ($plain !== null) {
+        return hash_equals($plain, $input);
+    }
+    return false;
 }
 // ================================
 
@@ -48,7 +69,7 @@ if (isset($_GET['logout'])) {
 restoreLoginFromRememberCookie();
 
 if (isset($_POST['login'])) {
-    if ($password !== null && hash_equals($password, $_POST["password"])) {
+    if ($hasCredential && verifyAppPassword($_POST["password"] ?? "", $passwordHash, $passwordPlain)) {
         session_regenerate_id(true);
         $_SESSION['loggedIn'] = true;
         createRememberLogin();
