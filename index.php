@@ -59,9 +59,12 @@ function verifyAppPassword($input, $hash, $plain) {
 }
 // ================================
 
-if (isset($_GET['logout'])) {
-    clearRememberCookie();
-    session_destroy();
+if (isset($_POST['logout'])) {
+    $token = $_POST['csrfToken'] ?? "";
+    if (!empty($_SESSION["csrfToken"]) && hash_equals($_SESSION["csrfToken"], $token)) {
+        clearRememberCookie();
+        session_destroy();
+    }
     header("Location: index.php");
     exit;
 }
@@ -142,7 +145,10 @@ if (!isLoggedIn()) {
           <button class="btn btnPrimary" type="button" id="btnAdd">＋ Add</button>
           <button class="btn btnSubtle" type="button" id="btnClearFilters">Clear filters</button>
           <button class="btn btnSubtle" type="button" id="btnTheme" title="Toggle theme">🌙</button>
-          <a href="?logout=1" class="btn btnDanger" title="Logout">⏻</a>
+          <form method="POST" style="margin:0; display:inline-flex;">
+            <input type="hidden" name="csrfToken" value="<?= htmlspecialchars($_SESSION["csrfToken"], ENT_QUOTES, "UTF-8") ?>" />
+            <button type="submit" name="logout" class="btn btnDanger" title="Logout">⏻</button>
+          </form>
         </div>
         <div class="filters">
           <div class="filterRow" id="categoryPills"></div>
