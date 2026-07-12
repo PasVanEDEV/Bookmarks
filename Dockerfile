@@ -5,7 +5,9 @@ FROM php:8.3-apache
 # Then honor .htaccess (default AllowOverride None) and enable needed modules.
 RUN rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
  && a2enmod mpm_prefork rewrite headers \
- && sed -ri 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
+ && sed -ri 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf \
+ && echo 'ServerName localhost' > /etc/apache2/conf-available/servername.conf \
+ && a2enconf servername
 
 # App code into the Apache web root.
 COPY . /var/www/html/
