@@ -23,11 +23,6 @@ RUN printf '%s\n' \
   '# Enforce a single MPM at runtime (build cache can leave mpm_event behind).' \
   'rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*' \
   'a2enmod mpm_prefork >/dev/null 2>&1 || true' \
-  'echo "=== MPM diagnostic ==="' \
-  'ls /etc/apache2/mods-enabled/ | grep -i mpm || echo "no mpm symlink"' \
-  'apache2ctl -t 2>&1 || true' \
-  'echo "listening on port ${PORT}"' \
-  'echo "====================="' \
   'exec apache2-foreground' \
   > /usr/local/bin/start.sh \
  && chmod +x /usr/local/bin/start.sh
