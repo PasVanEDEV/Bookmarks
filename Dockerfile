@@ -20,6 +20,9 @@ RUN printf '%s\n' \
   'sed -ri "s!^Listen [0-9]+!Listen ${PORT}!" /etc/apache2/ports.conf' \
   'sed -ri "s!<VirtualHost \\*:[0-9]+>!<VirtualHost *:${PORT}>!" /etc/apache2/sites-available/000-default.conf' \
   'if [ -n "$DATA_DIR" ]; then mkdir -p "$DATA_DIR"; chown -R www-data:www-data "$DATA_DIR"; fi' \
+  '# Enforce a single MPM at runtime (build cache can leave mpm_event behind).' \
+  'rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*' \
+  'a2enmod mpm_prefork >/dev/null 2>&1 || true' \
   'echo "=== MPM diagnostic ==="' \
   'ls /etc/apache2/mods-enabled/ | grep -i mpm || echo "no mpm symlink"' \
   'apache2ctl -t 2>&1 || true' \
