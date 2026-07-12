@@ -29,29 +29,6 @@ if (
     is_array($decoded["categoryOrder"])
 ) {
     $mainFile = 'data.php';
-    $backupDir = 'backups';
-    
-    if (!is_dir($backupDir)) {
-        mkdir($backupDir, 0755, true);
-        file_put_contents($backupDir . '/.htaccess', "Require all denied\n");
-    }
-
-    if (file_exists($mainFile)) {
-        $timestamp = date('Y-m-d_H-i-s');
-        $backupFile = $backupDir . '/backup_' . $timestamp . '.php';
-        copy($mainFile, $backupFile);
-
-        $backups = glob($backupDir . '/backup_*.php');
-        if (count($backups) > 10) {
-            usort($backups, function($a, $b) {
-                return filemtime($a) - filemtime($b);
-            });
-            while (count($backups) > 10) {
-                $oldest = array_shift($backups);
-                unlink($oldest);
-            }
-        }
-    }
 
     $contentToSave = "<?php exit; ?>\n" . $data;
     $result = file_put_contents($mainFile, $contentToSave, LOCK_EX);
