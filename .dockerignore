@@ -1,0 +1,8 @@
+# Keep VCS, secrets, and local data out of the image.
+.git
+.gitignore
+.env
+data.php
+auth_tokens.php
+backups
+*.md

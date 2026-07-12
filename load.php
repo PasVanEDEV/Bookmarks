@@ -12,8 +12,9 @@ if (!isLoggedIn()) {
 
 header('Content-Type: application/json');
 
-if (file_exists('data.php')) {
-    $content = file_get_contents('data.php');
+$dataFile = dataFile();
+if (file_exists($dataFile)) {
+    $content = file_get_contents($dataFile);
     $json = preg_replace('/^<\?php exit; \?>\s*/i', '', $content);
     echo $json;
 } else {

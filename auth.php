@@ -1,8 +1,30 @@
 <?php
 
-const AUTH_TOKEN_FILE = __DIR__ . '/auth_tokens.php';
 const REMEMBER_COOKIE_NAME = 'remember_me';
 const REMEMBER_LIFETIME = 90 * 24 * 60 * 60;
+
+// Where mutable data lives. Defaults to the app folder for local/self-hosted
+// use; set DATA_DIR (e.g. a mounted Railway volume) to keep data across
+// redeploys on hosts with an ephemeral filesystem.
+function dataDir() {
+    $dir = getenv('DATA_DIR');
+    if ($dir === false || $dir === '') {
+        return __DIR__;
+    }
+    $dir = rtrim($dir, '/');
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
+
+function dataFile() {
+    return dataDir() . '/data.php';
+}
+
+function authTokenFile() {
+    return dataDir() . '/auth_tokens.php';
+}
 
 function isSecureRequest() {
     return (
@@ -45,7 +67,10 @@ function startSecureSession() {
 // lock so concurrent requests can't clobber each other's changes.
 // $mutator receives the current tokens array and returns the array to
 // persist (return null to leave the file untouched).
-function withTokenLock(callable $mutator, $file = AUTH_TOKEN_FILE) {
+function withTokenLock(callable $mutator, $file = null) {
+    if ($file === null) {
+        $file = authTokenFile();
+    }
     $fp = @fopen($file, 'c+');
     if ($fp === false) {
         return;

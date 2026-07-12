@@ -109,7 +109,7 @@ $out = [
     "categoryOrder" => $cleanOrder,
 ];
 
-$mainFile = "data.php";
+$mainFile = dataFile();
 $contentToSave = "<?php exit; ?>\n" . json_encode($out, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 $result = file_put_contents($mainFile, $contentToSave, LOCK_EX);
 
