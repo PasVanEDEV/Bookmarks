@@ -1,7 +1,10 @@
 FROM php:8.3-apache
 
-# Honor .htaccess (default is AllowOverride None) and enable the modules it uses.
-RUN a2enmod rewrite headers \
+# mod_php needs exactly one MPM (prefork). Force it so two MPMs can't both
+# load ("Configuration error: More than one MPM loaded"). Then honor .htaccess
+# (default is AllowOverride None) and enable the modules it uses.
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+ && a2enmod mpm_prefork rewrite headers \
  && sed -ri 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
 
 # App code into the Apache web root.
