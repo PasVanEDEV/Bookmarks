@@ -9,7 +9,10 @@ if (!isLoggedIn()) {
     die(json_encode(["status" => "error", "message" => "Not logged in."]));
 }
 
-error_reporting(0);
+// Log errors, never leak them into the JSON response.
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL);
 header("Content-Type: application/json");
 
 $csrfToken = $_SERVER["HTTP_X_CSRF_TOKEN"] ?? "";

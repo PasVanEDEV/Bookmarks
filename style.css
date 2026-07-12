@@ -135,6 +135,7 @@ main { margin-top: 12px; }
 .bookmarkMain { min-width: 0; display:flex; flex-direction:column; gap:4px; }
 .bookmarkLink { text-decoration:none; font-weight: 500; font-size: 15px; color: var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 100%; }
 .bookmarkSub { font-family: var(--mono); font-size: 12px; color: var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 100%; }
+.bookmarkNotes { font-size: 12px; color: var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 100%; }
 .bookmarkRow img { width: 18px; height: 18px; }
 
 .rowActions { opacity: 0; pointer-events: none; transition: opacity 0.15s ease; display:flex; gap:6px; flex: 0 0 auto; }

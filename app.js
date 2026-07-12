@@ -317,7 +317,9 @@ function renderGrid(items){
       const safeTitle = escapeHTML(b.title);
       const safeUrl = escapeHTML(b.url);
       const safeHost = escapeHTML(getHostname(b.url));
-      
+      const notes = safeText(b.notes);
+      const notesRow = notes ? `<div class="bookmarkNotes" title="${escapeHTML(notes)}">${escapeHTML(notes)}</div>` : "";
+
       li.innerHTML = `
         <div class="bookmarkMain">
           <div style="display:flex; align-items:center; gap:8px;">
@@ -325,6 +327,7 @@ function renderGrid(items){
             <a class="bookmarkLink" href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeTitle}</a>
           </div>
           <div class="bookmarkSub">${safeHost}</div>
+          ${notesRow}
         </div>
         <div class="rowActions">
           <button class="rowBtn" type="button" data-action="edit" title="Edit">✎</button>
