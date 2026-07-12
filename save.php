@@ -2,6 +2,7 @@
 require_once __DIR__ . '/auth.php';
 
 startSecureSession();
+restoreLoginFromRememberCookie();
 
 if (!isLoggedIn()) {
     http_response_code(403);

@@ -110,6 +110,8 @@ function restoreLoginFromRememberCookie() {
     return true;
 }
 
+// Pure predicate: no side effects. Call restoreLoginFromRememberCookie()
+// once per request (after startSecureSession) if you want cookie recovery.
 function isLoggedIn() {
-    return (isset($_SESSION['loggedIn']) && $_SESSION['loggedIn'] === true) || restoreLoginFromRememberCookie();
+    return isset($_SESSION['loggedIn']) && $_SESSION['loggedIn'] === true;
 }

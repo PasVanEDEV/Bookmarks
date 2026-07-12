@@ -2,6 +2,7 @@
 require_once __DIR__ . '/auth.php';
 
 startSecureSession();
+restoreLoginFromRememberCookie();
 
 // Check if the user is logged in
 if (!isLoggedIn()) {
