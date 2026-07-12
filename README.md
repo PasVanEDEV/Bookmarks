@@ -35,14 +35,14 @@ Bookmarks stores its data locally in PHP-protected files. No database is require
 * **Category colors**
   Built-in color accents for categories such as Muziek, Social, TV&Film, AI, Shopping, Vakantie, ICT, Weer, Cyber, Werk, Financieel, Nieuws, and Vrijetijd. Google gets a Google-colored accent bar.
 
-* **Favicons and hostnames**
-  Bookmark rows show the site favicon and hostname for quick scanning.
+* **Favicons, hostnames, and notes**
+  Bookmark rows show the site favicon and hostname for quick scanning, plus the optional note when one is set.
 
 * **Dark mode**
   Toggle light and dark mode. The selected theme is saved in the browser with `localStorage` and is also applied on the login screen.
 
-* **Input and output protection**
-  URLs are validated, JSON payloads are checked before saving, and dynamic output is escaped to reduce XSS risk.
+* **Server-side validation**
+  `save.php` does not trust the client: it rebuilds a clean data structure on every save, requiring a title and category, enforcing `http`/`https` URLs, capping field lengths and the total bookmark count, and stripping unknown fields. Dynamic output is also escaped in the browser to reduce XSS risk.
 
 * **Mobile-friendly interface**
   Responsive layout with scrollable filters and compact controls for smaller screens.
@@ -65,10 +65,10 @@ Bookmarks stores its data locally in PHP-protected files. No database is require
 
 | File | Purpose |
 | --- | --- |
-| `index.php` | Login screen, dashboard markup, `.env` password loading, logout link |
-| `auth.php` | Shared session, cookie, and 90-day remember-me token handling |
+| `index.php` | Login screen, dashboard markup, `.env` password loading, CSRF-protected logout |
+| `auth.php` | Shared session, cookie, and 90-day remember-me token handling (locked token file) |
 | `load.php` | Loads bookmark data from `data.php` after auth validation |
-| `save.php` | Validates and saves bookmark data to `data.php` |
+| `save.php` | Validates, sanitizes, and saves bookmark data to `data.php` |
 | `app.js` | Frontend logic for bookmarks, categories, search, filters, drag-and-drop, theme, and toasts |
 | `style.css` | Responsive light/dark styling |
 | `data.php` | Local bookmark data file, generated or maintained by the app |
@@ -91,6 +91,7 @@ load.php
 save.php
 app.js
 style.css
+.htaccess
 ```
 
 Optional but recommended:
@@ -202,8 +203,9 @@ Log in with the password from `.env`.
 * Only hashed token values are stored in `auth_tokens.php`.
 * Expired tokens are removed during token checks.
 * Session IDs are regenerated after login and remember-me recovery.
-* Logout clears the remember-me cookie and destroys the PHP session.
-* Save requests require a session CSRF token from the dashboard page.
+* Remember-me tokens are read and written under an exclusive file lock so concurrent logins cannot clobber each other.
+* Logout is a POST request and, like saving, requires a session CSRF token before it clears the remember-me cookie and destroys the PHP session.
+* Save requests require a session CSRF token from the dashboard page, and the payload is fully re-validated server-side.
 
 ## Cookies
 
@@ -230,7 +232,7 @@ Bookmark favicons are loaded in the browser through Google favicon URLs. Bookmar
 
 * Serve the app over HTTPS so session and remember-me cookies can use the `Secure` flag.
 * On non-Apache hosting, add equivalent deny rules for `.env`, `data.php`, and `auth_tokens.php`.
-* Use a strong unique `APP_PASSWORD` and rotate it if it was ever committed or shared.
+* Prefer `APP_PASSWORD_HASH` (bcrypt) over a plaintext `APP_PASSWORD`, and rotate the password if it was ever committed or shared.
 * Consider server-level rate limiting or basic access restrictions if the app is publicly reachable.
 
 ---
@@ -297,6 +299,10 @@ Make sure `auth.php`, `load.php`, `save.php`, and `index.php` are all uploaded t
 ## Data is not saved
 
 Check that PHP can write to `data.php`. Also confirm that the submitted data contains `bookmarks` and `categoryOrder` arrays, the CSRF token meta tag is present on the dashboard, and `save.php` is reachable.
+
+## A bookmark disappeared after saving
+
+`save.php` drops entries that fail validation: a missing title or category, a non-`http(s)` URL, or a URL longer than 2048 characters. Fix the field and re-add the bookmark.
 
 ## The favicon is missing
 
