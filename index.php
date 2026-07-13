@@ -47,7 +47,7 @@ if (!isLoggedIn()) {
   <title>Login - My Bookmarks</title>
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
   <script>
     if (localStorage.getItem("theme") === "dark") {
       document.documentElement.setAttribute("data-theme", "dark");
@@ -80,7 +80,7 @@ if (!isLoggedIn()) {
   <title>My Bookmarks</title>
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
   <script>
     if (localStorage.getItem("theme") === "dark") {
       document.documentElement.setAttribute("data-theme", "dark");
@@ -214,6 +214,6 @@ if (!isLoggedIn()) {
     </div>
   </div>
 
-  <script src="app.js?v=4" defer></script>
+  <script src="app.js?v=5" defer></script>
 </body>
 </html>
