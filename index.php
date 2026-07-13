@@ -47,9 +47,11 @@ if (!isLoggedIn()) {
   <title>Login - My Bookmarks</title>
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
   <script>
-    if (localStorage.getItem("theme") === "dark") {
+    var storedTheme = localStorage.getItem("theme");
+    var wantsDark = storedTheme ? storedTheme === "dark" : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    if (wantsDark) {
       document.documentElement.setAttribute("data-theme", "dark");
     }
   </script>
@@ -80,9 +82,11 @@ if (!isLoggedIn()) {
   <title>My Bookmarks</title>
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
   <script>
-    if (localStorage.getItem("theme") === "dark") {
+    var storedTheme = localStorage.getItem("theme");
+    var wantsDark = storedTheme ? storedTheme === "dark" : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    if (wantsDark) {
       document.documentElement.setAttribute("data-theme", "dark");
     }
   </script>
@@ -98,9 +102,9 @@ if (!isLoggedIn()) {
           </div>
           <button class="btn btnPrimary" type="button" id="btnAdd">＋ Add</button>
           <button class="btn btnSubtle" type="button" id="btnClearFilters">Clear filters</button>
-          <button class="btn btnSubtle" type="button" id="btnTheme" title="Toggle theme">🌙</button>
+          <button class="btn btnSubtle" type="button" id="btnTheme" title="Toggle theme" aria-label="Thema wisselen">🌙</button>
           <div class="userMenu" id="userMenu">
-            <button class="btn btnSubtle" type="button" id="btnUser" title="Account" aria-haspopup="true" aria-expanded="false">👤</button>
+            <button class="btn btnSubtle" type="button" id="btnUser" title="Account" aria-label="Accountmenu" aria-haspopup="true" aria-expanded="false">👤</button>
             <div class="userMenuDropdown" id="userMenuDropdown" hidden>
               <div class="userMenuStats" id="userMenuStats">…</div>
               <button class="userMenuItem" type="button" id="btnChangePassword">🔑 Wachtwoord wijzigen</button>
@@ -214,6 +218,6 @@ if (!isLoggedIn()) {
     </div>
   </div>
 
-  <script src="app.js?v=5" defer></script>
+  <script src="app.js?v=6" defer></script>
 </body>
 </html>

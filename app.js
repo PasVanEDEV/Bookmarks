@@ -1,5 +1,6 @@
 const btnTheme = document.getElementById("btnTheme");
-const currentTheme = localStorage.getItem("theme") || "light";
+const systemPrefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+const currentTheme = localStorage.getItem("theme") || (systemPrefersDark ? "dark" : "light");
 
 if (btnTheme) {
   if (currentTheme === "dark") {
@@ -251,11 +252,17 @@ function saveData(){
     },
     body: JSON.stringify(payload)
   })
-  .then(r => { 
-    if(r.status === 403) window.location.reload();
-    if(!r.ok) console.error("Server save failed"); 
+  .then(r => {
+    if(r.status === 403) { window.location.reload(); return; }
+    if(!r.ok) {
+      console.error("Server save failed");
+      showToast("Opslaan mislukt", "Wijziging kon niet worden opgeslagen. Probeer opnieuw.");
+    }
   })
-  .catch(e => console.error("Network error:", e));
+  .catch(e => {
+    console.error("Network error:", e);
+    showToast("Opslaan mislukt", "Geen verbinding met server. Wijziging is niet opgeslagen.");
+  });
 }
 
 let toastTimer = null;
@@ -380,9 +387,11 @@ function renderGrid(items){
       panel.style.setProperty('--cat-accent-soft', categoryColors[cat].s);
     }
     
+    const catCount = items.filter(b => normalizeCategory(b.category) === cat).length;
     panel.innerHTML = `
       <div class="categoryHeader">
         <h2 class="categoryTitle">${escapeHTML(cat)}</h2>
+        <span class="categoryCount">${catCount}</span>
       </div>
       <ul class="bookmarkList"></ul>`;
       
@@ -444,15 +453,15 @@ function renderGrid(items){
       li.innerHTML = `
         <div class="bookmarkMain">
           <div style="display:flex; align-items:center; gap:8px;">
-            <img src="${faviconUrl}" alt="" style="width:18px; height:18px; border-radius:4px; flex-shrink:0;" loading="lazy">
+            <img src="${faviconUrl}" alt="" style="width:18px; height:18px; border-radius:4px; flex-shrink:0;" loading="lazy" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22%3E%3Cpath d=%22M7 4.5h10a1.5 1.5 0 0 1 1.5 1.5v15l-6.5-3-6.5 3V6A1.5 1.5 0 0 1 7 4.5Z%22 stroke=%22%2394a3b8%22 stroke-width=%221.8%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E';">
             <a class="bookmarkLink" href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeTitle}</a>
           </div>
           <div class="bookmarkSub">${safeHost}</div>
           ${notesRow}
         </div>
         <div class="rowActions">
-          <button class="rowBtn" type="button" data-action="edit" title="Edit">✎</button>
-          <button class="rowBtn rowBtnDanger" type="button" data-action="delete" title="Delete">🗑</button>
+          <button class="rowBtn" type="button" data-action="edit" title="Edit" aria-label="Bewerken">✎</button>
+          <button class="rowBtn rowBtnDanger" type="button" data-action="delete" title="Delete" aria-label="Verwijderen">🗑</button>
         </div>`;
 
       li.querySelector('[data-action="edit"]').addEventListener('click', () => openEdit(b.id));
