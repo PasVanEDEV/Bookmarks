@@ -7,57 +7,11 @@ if (empty($_SESSION["csrfToken"])) {
     $_SESSION["csrfToken"] = bin2hex(random_bytes(32));
 }
 
-// ==== PASSWORD CONFIGURATION ====
-function loadEnvFile($file) {
-    if (!is_readable($file)) return;
-
-    foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        $line = trim($line);
-        if ($line === "" || $line[0] === "#" || strpos($line, "=") === false) continue;
-
-        list($name, $value) = explode("=", $line, 2);
-        $name = trim($name);
-        $value = trim($value);
-
-        if ($name === "") continue;
-        $first = substr($value, 0, 1);
-        $last = substr($value, -1);
-        if (($first === chr(34) && $last === chr(34)) || ($first === chr(39) && $last === chr(39))) {
-            $value = substr($value, 1, -1);
-        }
-
-        putenv($name . "=" . $value);
-        $_ENV[$name] = $value;
-    }
-}
-
-loadEnvFile(__DIR__ . "/.env");
-
-// Prefer a bcrypt/argon hash (APP_PASSWORD_HASH); fall back to a
-// plaintext APP_PASSWORD for backward compatibility.
-$passwordHash = getenv("APP_PASSWORD_HASH");
-if ($passwordHash === false || $passwordHash === "") {
-    $passwordHash = null;
-}
-$passwordPlain = getenv("APP_PASSWORD");
-if ($passwordPlain === false || $passwordPlain === "") {
-    $passwordPlain = null;
-}
+// Password resolution (env loading + hash/plain fallback) lives in
+// auth.php so it's shared with account.php.
+$passwordHash = resolvePasswordHash();
+$passwordPlain = resolvePasswordPlain();
 $hasCredential = $passwordHash !== null || $passwordPlain !== null;
-
-function verifyAppPassword($input, $hash, $plain) {
-    if (!is_string($input) || $input === "") {
-        return false;
-    }
-    if ($hash !== null) {
-        return password_verify($input, $hash);
-    }
-    if ($plain !== null) {
-        return hash_equals($plain, $input);
-    }
-    return false;
-}
-// ================================
 
 if (isset($_POST['logout'])) {
     $token = $_POST['csrfToken'] ?? "";
@@ -93,7 +47,7 @@ if (!isLoggedIn()) {
   <title>Login - My Bookmarks</title>
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
   <script>
     if (localStorage.getItem("theme") === "dark") {
       document.documentElement.setAttribute("data-theme", "dark");
@@ -126,7 +80,7 @@ if (!isLoggedIn()) {
   <title>My Bookmarks</title>
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
   <script>
     if (localStorage.getItem("theme") === "dark") {
       document.documentElement.setAttribute("data-theme", "dark");
@@ -145,10 +99,19 @@ if (!isLoggedIn()) {
           <button class="btn btnPrimary" type="button" id="btnAdd">＋ Add</button>
           <button class="btn btnSubtle" type="button" id="btnClearFilters">Clear filters</button>
           <button class="btn btnSubtle" type="button" id="btnTheme" title="Toggle theme">🌙</button>
-          <form method="POST" style="margin:0; display:inline-flex;">
-            <input type="hidden" name="csrfToken" value="<?= htmlspecialchars($_SESSION["csrfToken"], ENT_QUOTES, "UTF-8") ?>" />
-            <button type="submit" name="logout" class="btn btnDanger" title="Logout">⏻</button>
-          </form>
+          <div class="userMenu" id="userMenu">
+            <button class="btn btnSubtle" type="button" id="btnUser" title="Account" aria-haspopup="true" aria-expanded="false">👤</button>
+            <div class="userMenuDropdown" id="userMenuDropdown" hidden>
+              <div class="userMenuStats" id="userMenuStats">…</div>
+              <button class="userMenuItem" type="button" id="btnChangePassword">🔑 Wachtwoord wijzigen</button>
+              <button class="userMenuItem" type="button" id="btnDownloadData">⬇️ Data downloaden (JSON)</button>
+              <button class="userMenuItem" type="button" id="btnLogoutAll">📴 Uitloggen op alle apparaten</button>
+              <form method="POST" style="margin:0;">
+                <input type="hidden" name="csrfToken" value="<?= htmlspecialchars($_SESSION["csrfToken"], ENT_QUOTES, "UTF-8") ?>" />
+                <button type="submit" name="logout" class="userMenuItem userMenuItemDanger">⏻ Uitloggen</button>
+              </form>
+            </div>
+          </div>
         </div>
         <div class="filters">
           <div class="filterRow" id="categoryPills"></div>
@@ -208,6 +171,39 @@ if (!isLoggedIn()) {
     </div>
   </dialog>
 
+  <dialog id="passwordDialog">
+    <div class="modalHeader">
+      <div>
+        <h2>Wachtwoord wijzigen</h2>
+        <p>Kies een nieuw wachtwoord van minimaal 8 tekens.</p>
+      </div>
+      <button class="btn btnSubtle" type="button" id="btnPasswordDialogClose">Close</button>
+    </div>
+    <div class="modalBody">
+      <form id="passwordForm">
+        <div class="gridForm">
+          <div class="field span2">
+            <label for="fieldCurrentPassword">Huidig wachtwoord</label>
+            <input id="fieldCurrentPassword" name="currentPassword" type="password" required autocomplete="current-password" />
+          </div>
+          <div class="field">
+            <label for="fieldNewPassword">Nieuw wachtwoord</label>
+            <input id="fieldNewPassword" name="newPassword" type="password" required minlength="8" autocomplete="new-password" />
+          </div>
+          <div class="field">
+            <label for="fieldConfirmPassword">Bevestig nieuw wachtwoord</label>
+            <input id="fieldConfirmPassword" name="confirmPassword" type="password" required minlength="8" autocomplete="new-password" />
+          </div>
+        </div>
+        <div class="error" id="passwordFormError"></div>
+      </form>
+    </div>
+    <div class="modalFooter">
+      <button class="btn btnSubtle" type="button" id="btnPasswordCancel">Cancel</button>
+      <button class="btn btnPrimary" type="submit" form="passwordForm" id="btnPasswordSave">Opslaan</button>
+    </div>
+  </dialog>
+
   <div class="toastRegion">
     <div class="toast" id="toast" data-open="false">
       <div>
@@ -218,6 +214,6 @@ if (!isLoggedIn()) {
     </div>
   </div>
 
-  <script src="app.js?v=3" defer></script>
+  <script src="app.js?v=4" defer></script>
 </body>
 </html>

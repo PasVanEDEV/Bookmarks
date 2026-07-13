@@ -3,6 +3,65 @@
 const REMEMBER_COOKIE_NAME = 'remember_me';
 const REMEMBER_LIFETIME = 90 * 24 * 60 * 60;
 
+// Loads KEY=value pairs from a .env file into getenv()/$_ENV. Shared by
+// every entry point (index.php, account.php, ...) so env-based password
+// fallback works consistently no matter which script handles the request.
+function loadEnvFile($file) {
+    if (!is_readable($file)) return;
+
+    foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === "" || $line[0] === "#" || strpos($line, "=") === false) continue;
+
+        list($name, $value) = explode("=", $line, 2);
+        $name = trim($name);
+        $value = trim($value);
+
+        if ($name === "") continue;
+        $first = substr($value, 0, 1);
+        $last = substr($value, -1);
+        if (($first === chr(34) && $last === chr(34)) || ($first === chr(39) && $last === chr(39))) {
+            $value = substr($value, 1, -1);
+        }
+
+        putenv($name . "=" . $value);
+        $_ENV[$name] = $value;
+    }
+}
+
+loadEnvFile(__DIR__ . "/.env");
+
+// Resolves the current password hash: prefer one set in-app (via
+// account.php's change-password action), then APP_PASSWORD_HASH from env.
+// Returns null if neither is set (caller should fall back to plaintext
+// APP_PASSWORD for backward compatibility).
+function resolvePasswordHash() {
+    $stored = getStoredPasswordHash();
+    if ($stored !== null) {
+        return $stored;
+    }
+    $envHash = getenv("APP_PASSWORD_HASH");
+    return ($envHash === false || $envHash === "") ? null : $envHash;
+}
+
+function resolvePasswordPlain() {
+    $envPlain = getenv("APP_PASSWORD");
+    return ($envPlain === false || $envPlain === "") ? null : $envPlain;
+}
+
+function verifyAppPassword($input, $hash, $plain) {
+    if (!is_string($input) || $input === "") {
+        return false;
+    }
+    if ($hash !== null) {
+        return password_verify($input, $hash);
+    }
+    if ($plain !== null) {
+        return hash_equals($plain, $input);
+    }
+    return false;
+}
+
 // Where mutable data lives. Defaults to the app folder for local/self-hosted
 // use; set DATA_DIR (e.g. a mounted Railway volume) to keep data across
 // redeploys on hosts with an ephemeral filesystem.
@@ -24,6 +83,31 @@ function dataFile() {
 
 function authTokenFile() {
     return dataDir() . '/auth_tokens.php';
+}
+
+function credentialFile() {
+    return dataDir() . '/auth_config.php';
+}
+
+// Returns the bcrypt/argon hash set via the in-app "change password"
+// feature, or null if the password has never been changed (in which case
+// the caller should fall back to the APP_PASSWORD_HASH/APP_PASSWORD env
+// vars from .env).
+function getStoredPasswordHash() {
+    $file = credentialFile();
+    if (!is_readable($file)) {
+        return null;
+    }
+    $content = file_get_contents($file);
+    $json = preg_replace('/^<\?php exit; \?>\s*/i', '', $content);
+    $data = json_decode($json, true);
+    return (is_array($data) && !empty($data['hash']) && is_string($data['hash'])) ? $data['hash'] : null;
+}
+
+function setStoredPasswordHash($hash) {
+    $file = credentialFile();
+    $content = "<?php exit; ?>\n" . json_encode(['hash' => $hash]);
+    return file_put_contents($file, $content, LOCK_EX) !== false;
 }
 
 function isSecureRequest() {

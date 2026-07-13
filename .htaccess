@@ -1,7 +1,7 @@
 # Block direct web access to secrets and local data files.
 # App reads these via PHP; they must never be served directly.
 
-<FilesMatch "^(\.env|data\.php|auth_tokens\.php)$">
+<FilesMatch "^(\.env|data\.php|auth_tokens\.php|auth_config\.php)$">
     # Apache 2.4+
     <IfModule mod_authz_core.c>
         Require all denied

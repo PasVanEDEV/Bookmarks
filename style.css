@@ -92,6 +92,14 @@ a { color:inherit; text-decoration:none; }
 .btnDanger:hover { background: rgba(220,38,38,0.06); border-color: rgba(220,38,38,0.45); transform: translateY(-1px); box-shadow: 0 10px 18px rgba(220,38,38,0.08); }
 [data-theme="dark"] .btnDanger { color: #ef4444; }
 
+.userMenu { position: relative; }
+.userMenuDropdown { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 240px; background: var(--bg1); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.userMenuStats { font-size: 12px; color: var(--muted); padding: 6px 10px 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.userMenuItem { appearance: none; border: none; background: transparent; color: var(--text); text-align: left; padding: 8px 10px; border-radius: 8px; font-size: 13.5px; cursor: pointer; width: 100%; }
+.userMenuItem:hover { background: var(--pill-bg); }
+.userMenuItemDanger { color: var(--danger-700); }
+[data-theme="dark"] .userMenuItemDanger { color: #ef4444; }
+
 .filters { padding: 0 12px 8px; display:grid; grid-template-columns: minmax(0, 1fr) auto; gap:12px; align-items:center; }
 .filterRow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; width:100%; min-width: 0; padding-bottom: 0; }
 

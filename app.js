@@ -16,6 +16,127 @@ if (btnTheme) {
 const state = { bookmarks: [], categoryOrder: [], query: "", selectedCategories: [], editingId: null };
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
 
+// === Account menu (user icon dropdown) ===
+const accountEls = {
+  menu: document.getElementById("userMenu"),
+  btnUser: document.getElementById("btnUser"),
+  dropdown: document.getElementById("userMenuDropdown"),
+  stats: document.getElementById("userMenuStats"),
+  btnChangePassword: document.getElementById("btnChangePassword"),
+  btnDownloadData: document.getElementById("btnDownloadData"),
+  btnLogoutAll: document.getElementById("btnLogoutAll"),
+  passwordDialog: document.getElementById("passwordDialog"),
+  passwordForm: document.getElementById("passwordForm"),
+  fieldCurrentPassword: document.getElementById("fieldCurrentPassword"),
+  fieldNewPassword: document.getElementById("fieldNewPassword"),
+  fieldConfirmPassword: document.getElementById("fieldConfirmPassword"),
+  passwordFormError: document.getElementById("passwordFormError"),
+  btnPasswordCancel: document.getElementById("btnPasswordCancel"),
+  btnPasswordDialogClose: document.getElementById("btnPasswordDialogClose")
+};
+
+async function accountAction(action, body) {
+  const res = await fetch(`account.php?action=${encodeURIComponent(action)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    body: JSON.stringify(body || {})
+  });
+  if (res.status === 403) { window.location.reload(); throw new Error("Session expired"); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.status !== "success") {
+    throw new Error(data.message || "Request failed");
+  }
+  return data;
+}
+
+function closeUserMenu() {
+  if (!accountEls.dropdown) return;
+  accountEls.dropdown.hidden = true;
+  accountEls.btnUser.setAttribute("aria-expanded", "false");
+}
+
+if (accountEls.btnUser) {
+  accountEls.btnUser.onclick = async (e) => {
+    e.stopPropagation();
+    const isOpen = !accountEls.dropdown.hidden;
+    if (isOpen) { closeUserMenu(); return; }
+    accountEls.dropdown.hidden = false;
+    accountEls.btnUser.setAttribute("aria-expanded", "true");
+    accountEls.stats.textContent = "Laden...";
+    try {
+      const data = await accountAction("stats");
+      accountEls.stats.textContent = `${data.bookmarkCount} bookmarks in ${data.categoryCount} categorieën`;
+    } catch {
+      accountEls.stats.textContent = "Kon statistieken niet laden.";
+    }
+  };
+
+  document.addEventListener("click", (e) => {
+    if (!accountEls.menu.contains(e.target)) closeUserMenu();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeUserMenu();
+  });
+}
+
+if (accountEls.btnDownloadData) {
+  accountEls.btnDownloadData.onclick = () => {
+    window.location.href = "account.php?action=download";
+    closeUserMenu();
+  };
+}
+
+if (accountEls.btnLogoutAll) {
+  accountEls.btnLogoutAll.onclick = async () => {
+    closeUserMenu();
+    if (!confirm("Uitloggen op alle apparaten (behalve je huidige sessie blijft actief tot je zelf uitlogt)?")) return;
+    try {
+      await accountAction("logout-all");
+      showToast("Gelukt", "Alle andere sessies zijn uitgelogd.");
+    } catch (e) {
+      showToast("Fout", e.message || "Kon niet uitloggen op alle apparaten.");
+    }
+  };
+}
+
+if (accountEls.btnChangePassword) {
+  accountEls.btnChangePassword.onclick = () => {
+    closeUserMenu();
+    accountEls.passwordForm.reset();
+    accountEls.passwordFormError.dataset.visible = "false";
+    accountEls.passwordDialog.showModal();
+  };
+  accountEls.btnPasswordCancel.onclick = () => accountEls.passwordDialog.close();
+  accountEls.btnPasswordDialogClose.onclick = () => accountEls.passwordDialog.close();
+
+  accountEls.passwordForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const current = accountEls.fieldCurrentPassword.value;
+    const next = accountEls.fieldNewPassword.value;
+    const confirmValue = accountEls.fieldConfirmPassword.value;
+
+    if (next.length < 8) {
+      accountEls.passwordFormError.textContent = "Nieuw wachtwoord moet minstens 8 tekens zijn.";
+      accountEls.passwordFormError.dataset.visible = "true";
+      return;
+    }
+    if (next !== confirmValue) {
+      accountEls.passwordFormError.textContent = "Wachtwoorden komen niet overeen.";
+      accountEls.passwordFormError.dataset.visible = "true";
+      return;
+    }
+
+    try {
+      await accountAction("change-password", { currentPassword: current, newPassword: next });
+      accountEls.passwordDialog.close();
+      showToast("Gelukt", "Wachtwoord is gewijzigd.");
+    } catch (e) {
+      accountEls.passwordFormError.textContent = e.message || "Wachtwoord wijzigen mislukt.";
+      accountEls.passwordFormError.dataset.visible = "true";
+    }
+  };
+}
+
 const categoryColors = {
   "Muziek": { a: "#1DB954", s: "rgba(29, 185, 84, 0.14)" },
   "Social": { a: "#1877F2", s: "rgba(24, 119, 242, 0.14)" },

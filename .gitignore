@@ -1,4 +1,5 @@
 auth_tokens.php
+auth_config.php
 data.php
 icon.png
 .env
