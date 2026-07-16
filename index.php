@@ -111,6 +111,7 @@ if (!isLoggedIn()) {
               <button class="userMenuItem" type="button" id="btnDownloadData">⬇️ Data downloaden (JSON)</button>
               <button class="userMenuItem" type="button" id="btnImportHtml">📥 Importeer bookmarks.html</button>
               <input type="file" id="fieldImportHtml" accept=".html,text/html" hidden>
+              <a class="userMenuItem" id="bookmarkletLink" href="#" title="Sleep naar je bladwijzerbalk">🔖 Bladwijzerknop (sleep naar balk)</a>
               <button class="userMenuItem" type="button" id="btnLogoutAll">📴 Uitloggen op alle apparaten</button>
               <form method="POST" style="margin:0;">
                 <input type="hidden" name="csrfToken" value="<?= htmlspecialchars($_SESSION["csrfToken"], ENT_QUOTES, "UTF-8") ?>" />

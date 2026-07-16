@@ -89,6 +89,17 @@ if (accountEls.btnDownloadData) {
   };
 }
 
+const bookmarkletLink = document.getElementById("bookmarkletLink");
+if (bookmarkletLink) {
+  const target = window.location.origin + window.location.pathname;
+  const code = `javascript:(function(){location.href=${JSON.stringify(target)}+'?addUrl='+encodeURIComponent(location.href)+'&addTitle='+encodeURIComponent(document.title);})()`;
+  bookmarkletLink.href = code;
+  bookmarkletLink.onclick = (e) => {
+    e.preventDefault();
+    alert("Sleep deze knop naar je bladwijzerbalk (in plaats van erop te klikken).");
+  };
+}
+
 if (accountEls.btnImportHtml) {
   accountEls.btnImportHtml.onclick = () => {
     closeUserMenu();
@@ -652,6 +663,16 @@ async function init(){
   state.categoryOrder = data.categoryOrder;
 
   render();
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("addUrl")) {
+    const url = safeText(params.get("addUrl"));
+    const title = safeText(params.get("addTitle")) || getHostname(url);
+    history.replaceState(null, "", window.location.pathname);
+    if (isValidHttpUrl(url) && els.dialog) {
+      openDialog("add", { url, title });
+    }
+  }
 }
 
 init();
