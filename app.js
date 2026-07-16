@@ -25,6 +25,8 @@ const accountEls = {
   stats: document.getElementById("userMenuStats"),
   btnChangePassword: document.getElementById("btnChangePassword"),
   btnDownloadData: document.getElementById("btnDownloadData"),
+  btnImportHtml: document.getElementById("btnImportHtml"),
+  fieldImportHtml: document.getElementById("fieldImportHtml"),
   btnLogoutAll: document.getElementById("btnLogoutAll"),
   passwordDialog: document.getElementById("passwordDialog"),
   passwordForm: document.getElementById("passwordForm"),
@@ -85,6 +87,58 @@ if (accountEls.btnDownloadData) {
     window.location.href = "account.php?action=download";
     closeUserMenu();
   };
+}
+
+if (accountEls.btnImportHtml) {
+  accountEls.btnImportHtml.onclick = () => {
+    closeUserMenu();
+    accountEls.fieldImportHtml.value = "";
+    accountEls.fieldImportHtml.click();
+  };
+  accountEls.fieldImportHtml.onchange = async () => {
+    const file = accountEls.fieldImportHtml.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const imported = parseNetscapeBookmarks(text);
+      if (!imported.length) {
+        showToast("Niets gevonden", "Geen bookmarks gevonden in dit bestand.");
+        return;
+      }
+      const existingUrls = new Set(state.bookmarks.map(b => b.url));
+      const fresh = imported.filter(b => !existingUrls.has(b.url));
+      state.bookmarks.unshift(...fresh);
+      saveData();
+      render();
+      showToast("Geïmporteerd", `${fresh.length} bookmarks toegevoegd (${imported.length - fresh.length} overgeslagen, al aanwezig).`);
+    } catch (e) {
+      showToast("Import mislukt", e.message || "Kon bestand niet lezen.");
+    }
+  };
+}
+
+function parseNetscapeBookmarks(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const links = doc.querySelectorAll("a[href]");
+  const result = [];
+  links.forEach(a => {
+    const url = safeText(a.getAttribute("href"));
+    if (!isValidHttpUrl(url)) return;
+    const title = safeText(a.textContent) || getHostname(url);
+    const prevSibling = a.closest("dl")?.previousElementSibling;
+    const heading = prevSibling?.tagName === "H3" ? prevSibling : prevSibling?.querySelector("h3");
+    const category = normalizeCategory(heading ? heading.textContent : "Geïmporteerd");
+    result.push({
+      id: uid(),
+      title,
+      url,
+      category,
+      notes: "",
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+  });
+  return result;
 }
 
 if (accountEls.btnLogoutAll) {
