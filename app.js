@@ -607,6 +607,8 @@ if (els.form) {
       category: normalizeCategory(els.fieldCategory.value),
       notes: safeText(els.fieldNotes.value)
     };
+    const dup = state.bookmarks.find(x => x.url === b.url && x.id !== state.editingId);
+    if (dup && !confirm(`Deze URL staat al in "${dup.title}". Toch opslaan?`)) return;
     if(state.editingId){
       const idx = state.bookmarks.findIndex(x => x.id === state.editingId);
       state.bookmarks[idx] = { ...state.bookmarks[idx], ...b, updatedAt: Date.now() };
