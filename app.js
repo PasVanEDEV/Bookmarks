@@ -341,7 +341,7 @@ function render(){
   const filtered = state.bookmarks.filter(b => {
     const cat = normalizeCategory(b.category);
     if(state.selectedCategories.length > 0 && !state.selectedCategories.includes(cat)) return false;
-    return !q || (b.title + " " + b.category).toLowerCase().includes(q);
+    return !q || (b.title + " " + b.category + " " + b.url).toLowerCase().includes(q);
   });
   renderPills();
   renderGrid(filtered);
